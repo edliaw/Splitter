@@ -6,16 +6,148 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
+    @StateObject private var viewModel = AppViewModel()
+    @State private var isTargeted = false
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        VStack(spacing: 20) {
+            
+            // Header
+            Text("Video Splitter")
+                .font(.title)
+                .fontWeight(.bold)
+                .padding(.top)
+            
+            // Drag and Drop Area / List
+            VStack {
+                if viewModel.videos.isEmpty {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isTargeted ? Color.accentColor : Color.gray, style: StrokeStyle(lineWidth: 2, dash: [5]))
+                            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        
+                        VStack {
+                            Image(systemName: "arrow.down.doc")
+                                .font(.largeTitle)
+                            Text("Drag and drop MP4 files here")
+                        }
+                        .foregroundColor(.secondary)
+                    }
+                    .frame(height: 200)
+                } else {
+                    List {
+                        ForEach(viewModel.videos) { video in
+                            HStack {
+                                Image(systemName: "film")
+                                Text(video.name)
+                                Spacer()
+                            }
+                        }
+                        .onMove(perform: viewModel.moveItems)
+                    }
+                    .frame(minHeight: 200)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(isTargeted ? Color.accentColor : Color.clear, lineWidth: 2)
+                    )
+                }
+            }
+            .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
+                var urls: [URL] = []
+                let group = DispatchGroup()
+                
+                for provider in providers {
+                    group.enter()
+                    _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                        if let url = url {
+                            urls.append(url)
+                        }
+                        group.leave()
+                    }
+                }
+                
+                group.notify(queue: .main) {
+                    viewModel.addFiles(urls: urls)
+                }
+                return true
+            }
+            .padding(.horizontal)
+            
+            Divider()
+            
+            // Controls
+            Form {
+                TextField("Filename Prefix:", text: $viewModel.filenamePrefix)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                HStack {
+                    Text("Output Folder:")
+                    if let url = viewModel.outputDirectory {
+                        Text(url.path)
+                            .truncationMode(.middle)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("None Selected").foregroundColor(.red)
+                    }
+                    Spacer()
+                    Button("Select...") {
+                        viewModel.selectOutputDirectory()
+                    }
+                }
+            }
+            .padding(.horizontal)
+            
+            // Status and Progress
+            VStack {
+                switch viewModel.state {
+                case .idle:
+                    EmptyView()
+                case .processing(let progress):
+                    ProgressView(value: progress)
+                    Text(viewModel.progressDescription)
+                        .font(.caption)
+                case .completed:
+                    Text("Completed Successfully!")
+                        .foregroundColor(.green)
+                case .error(let msg):
+                    Text("Error: \(msg)")
+                        .foregroundColor(.red)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Action Button
+            HStack {
+                if !viewModel.videos.isEmpty {
+                    Button("Clear List") {
+                        viewModel.videos.removeAll()
+                        viewModel.state = .idle
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    viewModel.startProcessing()
+                }) {
+                    Text("Concat & Split")
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                }
+                .disabled(viewModel.outputDirectory == nil || viewModel.videos.isEmpty || isProcessing)
+                .keyboardShortcut(.defaultAction)
+            }
+            .padding()
         }
-        .padding()
+        .frame(minWidth: 500, minHeight: 600)
+    }
+    
+    var isProcessing: Bool {
+        if case .processing = viewModel.state { return true }
+        return false
     }
 }
 
