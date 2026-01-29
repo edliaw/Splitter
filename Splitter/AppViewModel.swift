@@ -16,11 +16,10 @@ class AppViewModel: ObservableObject {
     @Published var filenamePrefix: String = "segment"
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
+    @Published var showMissingFFmpegAlert = false
     
-    // CHANGE THIS if your ffmpeg is in a different location
-    // Run `which ffmpeg` in terminal to find the path.
-    let ffmpegPath = "/opt/homebrew/bin/ffmpeg"
-    let ffprobePath = "/opt/homebrew/bin/ffprobe"
+    var ffmpegPath = ""
+    var ffprobePath = ""
     
     // MARK: - File Management
     func addFiles(urls: [URL]) {
@@ -51,6 +50,14 @@ class AppViewModel: ObservableObject {
     
     // MARK: - FFmpeg Logic
     func startProcessing() {
+        if let foundPath = findFFmpeg() {
+            self.ffmpegPath = foundPath
+            self.ffprobePath = foundPath.replacingOccurrences(of: "ffmpeg", with: "ffprobe")
+        } else {
+            self.showMissingFFmpegAlert = true
+            return
+        }
+        
         guard !videos.isEmpty, let outputDir = outputDirectory else { return }
         
         state = .processing(0.0)
@@ -77,6 +84,20 @@ class AppViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    private func findFFmpeg() -> String? {
+        let usualPaths = [
+            "/opt/homebrew/bin/ffmpeg",
+            "/usr/local/bin/ffmpeg",
+            "/usr/bin/ffmpeg"
+        ]
+        for path in usualPaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+        return nil
     }
     
     private func calculateTotalDuration() async throws -> Double {

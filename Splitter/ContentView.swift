@@ -143,6 +143,13 @@ struct ContentView: View {
             .padding()
         }
         .frame(minWidth: 500, minHeight: 600)
+        
+        // MARK: - Missing FFmpeg Alert
+        .alert("FFmpeg Not Found", isPresented: $viewModel.showMissingFFmpegAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal.")
+        }
     }
     
     var isProcessing: Bool {
