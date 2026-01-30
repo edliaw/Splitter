@@ -13,5 +13,6 @@ struct SplitterApp: App {
         WindowGroup {
             ContentView()
         }
+        .defaultSize(width: 400, height: 600)
     }
 }

@@ -95,7 +95,7 @@ struct ContentView: View {
             // Controls
             Grid {
                 GridRow {
-                    Text("Output Directory:")
+                    Text("Folder:")
                         .gridColumnAlignment(.trailing)
                     HStack {
                         if let url = viewModel.outputDirectory {
@@ -113,12 +113,20 @@ struct ContentView: View {
                     .gridColumnAlignment(.leading)
                 }
                 GridRow {
-                    Text("Segment Prefix:")
-                    TextField("prefix", text: $viewModel.filenamePrefix)
+                    Text("Prefix:")
+                    HStack {
+                        TextField("some_prefix", text: $viewModel.filenamePrefix)
+                            .multilineTextAlignment(.trailing)
+                        Text("000.mp4")
+                    }
                 }
                 GridRow {
-                    Text("Length (minutes):")
-                    TextField("length", value: $viewModel.segmentSize, format: .number)
+                    Text("Length:")
+                    HStack {
+                        TextField("length", value: $viewModel.segmentSize, format: .number)
+                            .multilineTextAlignment(.trailing)
+                        Text("minutes")
+                    }
                 }
             }
             .padding(.horizontal)
@@ -157,7 +165,7 @@ struct ContentView: View {
             }
             .padding()
         }
-        .frame(minWidth: 500, minHeight: 600)
+        .frame(minWidth: 300, minHeight: 600)
         
         // MARK: - Alert
         .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert, presenting: viewModel) { viewModel in

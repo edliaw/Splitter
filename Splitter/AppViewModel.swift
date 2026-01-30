@@ -13,7 +13,7 @@ import UniformTypeIdentifiers
 class AppViewModel: ObservableObject {
     @Published var videos: [InputVideo] = []
     @Published var outputDirectory: URL?
-    @Published var filenamePrefix: String = "segment"
+    @Published var filenamePrefix: String = ""
     @Published var segmentSize: Float = 10.0
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
@@ -158,7 +158,7 @@ class AppViewModel: ObservableObject {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
-        let outputPattern = outputDir.appendingPathComponent("\(filenamePrefix)_%03d.mp4").path
+        let outputPattern = outputDir.appendingPathComponent("\(filenamePrefix)%03d.mp4").path
         let segmentTime = self.segmentSize * 60
         
         // Command: Concat inputs -> Split into 10 min (600s) segments
