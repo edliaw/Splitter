@@ -45,11 +45,17 @@ struct ContentView: View {
                                     Image(systemName: "film")
                                     Text(video.name)
                                     Spacer()
+                                    Button(action: {
+                                        viewModel.deleteItem(video: video)
+                                    }) {
+                                        Image(systemName: "trash")
+                                            .foregroundColor(.red)
+                                    }
                                 }
                             }
                             .onMove(perform: viewModel.moveItems)
                         }
-                        .frame(minHeight: 200)
+                        .frame(minHeight: 50, idealHeight: 100)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(isTargeted ? Color.accentColor : Color.clear, lineWidth: 2)
@@ -84,6 +90,7 @@ struct ContentView: View {
                     Spacer()
                     Button(action: { viewModel.videos.removeAll() }) {
                         Label("Clear", systemImage: "trash")
+                            .foregroundColor(.red)
                     }
                     .disabled(viewModel.videos.isEmpty)
                 }
@@ -212,7 +219,7 @@ struct ContentView: View {
             }
             .padding()
         }
-        .frame(minWidth: 300, minHeight: 600)
+        .frame(minWidth: 300, idealWidth: 400, minHeight: 550, idealHeight: 600)
         
         // MARK: - Alert
         .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert, presenting: viewModel) { viewModel in
@@ -226,7 +233,7 @@ struct ContentView: View {
         if case .processing = viewModel.state { return true }
         return false
     }
-    
+
     private func selectFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true

@@ -55,6 +55,14 @@ class AppViewModel: ObservableObject {
         videos.move(fromOffsets: source, toOffset: destination)
     }
     
+    func deleteItem(video: InputVideo) {
+        withAnimation {
+            if let index = videos.firstIndex(of: video) {
+                videos.remove(at: index)
+            }
+        }
+    }
+
     func selectOutputDirectory() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
