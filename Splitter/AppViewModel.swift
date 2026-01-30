@@ -16,6 +16,9 @@ class AppViewModel: ObservableObject {
     @Published var filenamePrefix: String = "segment"
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
+    @Published var showingAlert = false
+    @Published var alertTitle = ""
+    @Published var alertMessage = ""
     @Published var showMissingFFmpegAlert = false
     
     var ffmpegPath = ""
@@ -41,10 +44,8 @@ class AppViewModel: ObservableObject {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.begin { response in
-            if response == .OK, let url = panel.url {
-                self.outputDirectory = url
-            }
+        if panel.runModal() == .OK {
+            self.outputDirectory = panel.url
         }
     }
     
@@ -54,12 +55,26 @@ class AppViewModel: ObservableObject {
             self.ffmpegPath = foundPath
             self.ffprobePath = foundPath.replacingOccurrences(of: "ffmpeg", with: "ffprobe")
         } else {
-            self.showMissingFFmpegAlert = true
+            self.showingAlert = true
+            self.alertTitle = "FFmpeg Not Found"
+            self.alertMessage = "This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal."
             return
         }
         
-        guard !videos.isEmpty, let outputDir = outputDirectory else { return }
+        guard !videos.isEmpty else {
+            self.showingAlert = true
+            self.alertTitle = "Video Files Missing"
+            self.alertMessage = "Please add video files first."
+            return
+        }
         
+        guard let outputDir = outputDirectory else {
+            self.showingAlert = true
+            self.alertTitle = "Output Directory Required"
+            self.alertMessage = "Please select an output directory."
+            return
+        }
+
         state = .processing(0.0)
         progressDescription = "Calculating total duration..."
         
@@ -87,12 +102,12 @@ class AppViewModel: ObservableObject {
     }
     
     private func findFFmpeg() -> String? {
-        let usualPaths = [
+        let paths = [
             "/opt/homebrew/bin/ffmpeg",
             "/usr/local/bin/ffmpeg",
             "/usr/bin/ffmpeg"
         ]
-        for path in usualPaths {
+        for path in paths {
             if FileManager.default.fileExists(atPath: path) {
                 return path
             }

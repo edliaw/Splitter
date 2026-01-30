@@ -23,66 +23,77 @@ struct ContentView: View {
             
             // Drag and Drop Area / List
             VStack {
-                if viewModel.videos.isEmpty {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(isTargeted ? Color.accentColor : Color.gray, style: StrokeStyle(lineWidth: 2, dash: [5]))
-                            .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                        
-                        VStack {
-                            Image(systemName: "arrow.down.doc")
-                                .font(.largeTitle)
-                            Text("Drag and drop MP4 files here")
-                        }
-                        .foregroundColor(.secondary)
-                    }
-                    .frame(height: 200)
-                } else {
-                    List {
-                        ForEach(viewModel.videos) { video in
-                            HStack {
-                                Image(systemName: "film")
-                                Text(video.name)
-                                Spacer()
+                VStack {
+                    if viewModel.videos.isEmpty {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(isTargeted ? Color.accentColor : Color.gray, style: StrokeStyle(lineWidth: 2, dash: [5]))
+                                .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                            
+                            VStack {
+                                Image(systemName: "arrow.down.doc")
+                                    .font(.largeTitle)
+                                Text("Drag and drop MP4 files here")
                             }
+                            .foregroundColor(.secondary)
                         }
-                        .onMove(perform: viewModel.moveItems)
-                    }
-                    .frame(minHeight: 200)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(isTargeted ? Color.accentColor : Color.clear, lineWidth: 2)
-                    )
-                }
-            }
-            .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
-                var urls: [URL] = []
-                let group = DispatchGroup()
-                
-                for provider in providers {
-                    group.enter()
-                    _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                        if let url = url {
-                            urls.append(url)
+                        .frame(height: 200)
+                    } else {
+                        List {
+                            ForEach(viewModel.videos) { video in
+                                HStack {
+                                    Image(systemName: "film")
+                                    Text(video.name)
+                                    Spacer()
+                                }
+                            }
+                            .onMove(perform: viewModel.moveItems)
                         }
-                        group.leave()
+                        .frame(minHeight: 200)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(isTargeted ? Color.accentColor : Color.clear, lineWidth: 2)
+                        )
                     }
                 }
-                
-                group.notify(queue: .main) {
-                    viewModel.addFiles(urls: urls)
+                .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
+                    var urls: [URL] = []
+                    let group = DispatchGroup()
+                    
+                    for provider in providers {
+                        group.enter()
+                        _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                            if let url = url {
+                                urls.append(url)
+                            }
+                            group.leave()
+                        }
+                    }
+                    
+                    group.notify(queue: .main) {
+                        viewModel.addFiles(urls: urls)
+                    }
+                    return true
                 }
-                return true
+                .padding(.horizontal)
+                
+                HStack {
+                    Button(action: selectFiles) {
+                        Label("Add Files", systemImage: "plus")
+                    }
+                    Spacer()
+                    Button(action: { viewModel.videos.removeAll() }) {
+                        Label("Clear", systemImage: "trash")
+                    }
+                    .disabled(viewModel.videos.isEmpty)
+                }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
             
             Divider()
             
             // Controls
-            Form {
-                TextField("Filename Prefix:", text: $viewModel.filenamePrefix)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
+            VStack {
                 HStack {
                     Text("Output Folder:")
                     if let url = viewModel.outputDirectory {
@@ -93,9 +104,12 @@ struct ContentView: View {
                         Text("None Selected").foregroundColor(.red)
                     }
                     Spacer()
-                    Button("Select...") {
-                        viewModel.selectOutputDirectory()
-                    }
+                    Button("Select...", action: viewModel.selectOutputDirectory)
+                }
+                HStack {
+                    Text("Filename Prefix:")
+                    TextField("prefix", text: $viewModel.filenamePrefix)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
             }
             .padding(.horizontal)
@@ -121,13 +135,6 @@ struct ContentView: View {
             
             // Action Button
             HStack {
-                if !viewModel.videos.isEmpty {
-                    Button("Clear List") {
-                        viewModel.videos.removeAll()
-                        viewModel.state = .idle
-                    }
-                }
-                
                 Spacer()
                 
                 Button(action: {
@@ -144,17 +151,28 @@ struct ContentView: View {
         }
         .frame(minWidth: 500, minHeight: 600)
         
-        // MARK: - Missing FFmpeg Alert
-        .alert("FFmpeg Not Found", isPresented: $viewModel.showMissingFFmpegAlert) {
+        // MARK: - Alert
+        .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert, presenting: viewModel) { viewModel in
             Button("OK", role: .cancel) { }
-        } message: {
-            Text("This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal.")
+        } message: { viewModel in
+            Text(viewModel.alertMessage)
         }
     }
     
     var isProcessing: Bool {
         if case .processing = viewModel.state { return true }
         return false
+    }
+    
+    private func selectFiles() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.movie]
+        
+        if panel.runModal() == .OK {
+            viewModel.addFiles(urls: panel.urls)
+        }
     }
 }
 
