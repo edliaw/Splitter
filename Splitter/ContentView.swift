@@ -93,27 +93,36 @@ struct ContentView: View {
             Divider()
             
             // Controls
-            VStack {
-                HStack {
-                    Text("Output Folder:")
-                    if let url = viewModel.outputDirectory {
-                        Text(url.path)
-                            .truncationMode(.middle)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("None Selected").foregroundColor(.red)
+            Grid {
+                GridRow {
+                    Text("Output Directory:")
+                        .gridColumnAlignment(.trailing)
+                    HStack {
+                        if let url = viewModel.outputDirectory {
+                            Text(url.path)
+                                .truncationMode(.middle)
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("None Selected").foregroundColor(.red)
+                        }
+                        Spacer()
+                        Button(action: viewModel.selectOutputDirectory) {
+                            Label("Select", systemImage: "arrow.up.folder")
+                        }
                     }
-                    Spacer()
-                    Button("Select...", action: viewModel.selectOutputDirectory)
+                    .gridColumnAlignment(.leading)
                 }
-                HStack {
-                    Text("Filename Prefix:")
+                GridRow {
+                    Text("Segment Prefix:")
                     TextField("prefix", text: $viewModel.filenamePrefix)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                GridRow {
+                    Text("Length (minutes):")
+                    TextField("length", value: $viewModel.segmentSize, format: .number)
                 }
             }
             .padding(.horizontal)
-            
+
             // Status and Progress
             VStack {
                 switch viewModel.state {
@@ -140,11 +149,10 @@ struct ContentView: View {
                 Button(action: {
                     viewModel.startProcessing()
                 }) {
-                    Text("Concat & Split")
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
+                    Label("Merge & Split", systemImage: "play.rectangle")
+                        .padding(.horizontal, 2)
+                        .padding(.vertical, 2)
                 }
-                .disabled(viewModel.outputDirectory == nil || viewModel.videos.isEmpty || isProcessing)
                 .keyboardShortcut(.defaultAction)
             }
             .padding()

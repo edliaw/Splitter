@@ -14,6 +14,7 @@ class AppViewModel: ObservableObject {
     @Published var videos: [InputVideo] = []
     @Published var outputDirectory: URL?
     @Published var filenamePrefix: String = "segment"
+    @Published var segmentSize: Float = 10.0
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
     @Published var showingAlert = false
@@ -158,6 +159,7 @@ class AppViewModel: ObservableObject {
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
         let outputPattern = outputDir.appendingPathComponent("\(filenamePrefix)_%03d.mp4").path
+        let segmentTime = self.segmentSize * 60
         
         // Command: Concat inputs -> Split into 10 min (600s) segments
         // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
@@ -169,7 +171,7 @@ class AppViewModel: ObservableObject {
             "-c", "copy",
             "-map", "0",
             "-f", "segment",
-            "-segment_time", "600", // 10 minutes
+            "-segment_time", "\(segmentTime)",
             "-reset_timestamps", "1",
             outputPattern
         ]
