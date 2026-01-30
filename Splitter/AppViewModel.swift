@@ -139,7 +139,8 @@ class AppViewModel: ObservableObject {
     
     private func createConcatFile() throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
-        let fileURL = tempDir.appendingPathComponent("concat_list.txt")
+        let uuid = UUID().uuidString
+        let fileURL = tempDir.appendingPathComponent("concat_\(uuid).txt")
         
         var content = ""
         for video in videos {
@@ -201,6 +202,8 @@ class AppViewModel: ObservableObject {
         }
         
         process.waitUntilExit()
+        
+        try? FileManager.default.removeItem(at: listURL)
         
         if process.terminationStatus != 0 {
             throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
