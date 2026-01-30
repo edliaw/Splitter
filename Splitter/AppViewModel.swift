@@ -1,5 +1,5 @@
 //
-//  FFmpegProcessor.swift
+//  AppViewModel.swift
 //  Splitter
 //
 //  Created by Edward Liaw on 1/29/26.
