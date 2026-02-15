@@ -154,14 +154,26 @@ struct ContentView: View {
             HStack {
                 Spacer()
                 
-                Button(action: {
-                    viewModel.startProcessing()
-                }) {
-                    Label("Merge & Split", systemImage: "play.rectangle")
-                        .padding(.horizontal, 2)
-                        .padding(.vertical, 2)
+                switch viewModel.state {
+                case .processing:
+                    Button(action: {
+                        viewModel.cancelProcessing()
+                    }) {
+                        Label("Cancel", systemImage: "xmark.circle")
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 2)
+                    }
+                default:
+                    Button(action: {
+                        viewModel.startProcessing()
+                    }) {
+                        Label("Merge & Split", systemImage: "play.rectangle")
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 2)
+                    }
+                    .keyboardShortcut(.defaultAction)
                 }
-                .keyboardShortcut(.defaultAction)
             }
             .padding()
         }
