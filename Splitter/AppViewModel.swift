@@ -27,6 +27,7 @@ class AppViewModel: ObservableObject {
             objectWillChange.send()
         }
     }
+    @Published var startNumberStr: String = "000"
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
     @Published var showingAlert = false
@@ -200,6 +201,11 @@ class AppViewModel: ObservableObject {
                 "-segment_time", "\(segmentTime)",
                 "-reset_timestamps", "1",
             ]
+            if self.startNumberStr != "000" {
+                args += [
+                    "-segment_start_number", self.startNumberStr,
+                ]
+            }
         }
         args.append(outputPattern)
         

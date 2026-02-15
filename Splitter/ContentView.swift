@@ -118,10 +118,19 @@ struct ContentView: View {
                         TextField("some_prefix", text: $viewModel.filenamePrefix)
                             .multilineTextAlignment(.trailing)
                         if viewModel.splitEnabled {
-                            Text("000.mp4")
-                        } else {
-                            Text(".mp4")
+                            TextField("start", text: $viewModel.startNumberStr)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 40)
+                                .onChange(of: viewModel.startNumberStr) { oldValue, newValue in
+                                    let filtered = newValue.filter { $0.isNumber }
+                                    if let number = UInt16(String(filtered)) {
+                                        viewModel.startNumberStr = String(format: "%03d", number)
+                                    } else {
+                                        viewModel.startNumberStr = "000"
+                                    }
+                                }
                         }
+                        Text(".mp4")
                     }
                 }
                 GridRow {
