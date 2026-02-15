@@ -117,15 +117,35 @@ struct ContentView: View {
                     HStack {
                         TextField("some_prefix", text: $viewModel.filenamePrefix)
                             .multilineTextAlignment(.trailing)
-                        Text("000.mp4")
+                        if viewModel.splitEnabled {
+                            Text("000.mp4")
+                        } else {
+                            Text(".mp4")
+                        }
                     }
                 }
                 GridRow {
-                    Text("Length:")
+                    Text("Mode:")
                     HStack {
-                        TextField("length", value: $viewModel.segmentSize, format: .number)
+                        if viewModel.splitEnabled {
+                            Text("Split")
+                        } else {
+                            Text("Merge")
+                        }
+                        Spacer()
+                        Toggle("", isOn: $viewModel.splitEnabled)
+                            .toggleStyle(.switch)
                             .multilineTextAlignment(.trailing)
-                        Text("minutes")
+                    }
+                }
+                if viewModel.splitEnabled {
+                    GridRow {
+                        Text("Length:")
+                        HStack {
+                            TextField("length", value: $viewModel.segmentSize, format: .number)
+                                .multilineTextAlignment(.trailing)
+                            Text("minutes")
+                        }
                     }
                 }
             }
@@ -168,9 +188,15 @@ struct ContentView: View {
                     Button(action: {
                         viewModel.startProcessing()
                     }) {
-                        Label("Merge & Split", systemImage: "play.rectangle")
-                            .padding(.horizontal, 2)
-                            .padding(.vertical, 2)
+                        if viewModel.splitEnabled {
+                            Label("Merge & Split", systemImage: "play.rectangle")
+                                .padding(.horizontal, 2)
+                                .padding(.vertical, 2)
+                        } else {
+                            Label("Merge", systemImage: "play.rectangle")
+                                .padding(.horizontal, 2)
+                                .padding(.vertical, 2)
+                        }
                     }
                     .keyboardShortcut(.defaultAction)
                 }

@@ -12,15 +12,28 @@ import UniformTypeIdentifiers
 @MainActor
 class AppViewModel: ObservableObject {
     @Published var videos: [InputVideo] = []
-    @Published var outputDirectory: URL?
-    @Published var filenamePrefix: String = ""
-    @Published var segmentSize: Float = 5.0
+    @AppStorage("outputDirectory") var outputDirectory: URL? {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+    @AppStorage("filenamePrefix") var filenamePrefix: String = "" {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+    @AppStorage("segmentSize") var segmentSize: Double = 5.0 {
+        willSet {
+            objectWillChange.send()
+        }
+    }
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
     @Published var showingAlert = false
     @Published var alertTitle = ""
     @Published var alertMessage = ""
     @Published var showMissingFFmpegAlert = false
+    @Published var splitEnabled = true
     
     var ffmpegPath = ""
     var ffprobePath = ""
@@ -160,24 +173,37 @@ class AppViewModel: ObservableObject {
         self.activeProcess = process
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
-        let outputPattern = outputDir.appendingPathComponent("\(filenamePrefix)%03d.mp4").path
-        let segmentTime = self.segmentSize * 60
+        var filename = filenamePrefix
+        if self.splitEnabled {
+            filename += "%03d.mp4"
+        } else {
+            filename += ".mp4"
+        }
         
+        let outputPattern = outputDir.appendingPathComponent(filename).path
+        let segmentTime = self.segmentSize * 60
+                
         // Command: Concat inputs -> Split into 10 min (600s) segments
         // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
         // To fix that, remove "-c copy" to force re-encoding (slower).
-        process.arguments = [
+        var args = [
             "-f", "concat",
             "-safe", "0",
             "-i", listURL.path,
             "-c", "copy",
             "-ignore_unknown",
-            "-map", "0",
-            "-f", "segment",
-            "-segment_time", "\(segmentTime)",
-            "-reset_timestamps", "1",
-            outputPattern
+            "-map", "0"
         ]
+        if self.splitEnabled {
+            args += [
+                "-f", "segment",
+                "-segment_time", "\(segmentTime)",
+                "-reset_timestamps", "1",
+            ]
+        }
+        args.append(outputPattern)
+        
+        process.arguments = args
         
         let pipe = Pipe()
         process.standardError = pipe // FFmpeg writes progress to stderr
