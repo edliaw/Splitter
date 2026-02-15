@@ -14,7 +14,7 @@ class AppViewModel: ObservableObject {
     @Published var videos: [InputVideo] = []
     @Published var outputDirectory: URL?
     @Published var filenamePrefix: String = ""
-    @Published var segmentSize: Float = 10.0
+    @Published var segmentSize: Float = 5.0
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
     @Published var showingAlert = false
@@ -24,6 +24,7 @@ class AppViewModel: ObservableObject {
     
     var ffmpegPath = ""
     var ffprobePath = ""
+    private var activeProcess: Process? // tracks the running process
     
     // MARK: - File Management
     func addFiles(urls: [URL]) {
@@ -156,6 +157,7 @@ class AppViewModel: ObservableObject {
     
     private func runFFmpeg(listURL: URL, outputDir: URL, totalDuration: Double) async throws {
         let process = Process()
+        self.activeProcess = process
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
         
         let outputPattern = outputDir.appendingPathComponent("\(filenamePrefix)%03d.mp4").path
@@ -169,6 +171,7 @@ class AppViewModel: ObservableObject {
             "-safe", "0",
             "-i", listURL.path,
             "-c", "copy",
+            "-ignore_unknown",
             "-map", "0",
             "-f", "segment",
             "-segment_time", "\(segmentTime)",
@@ -204,11 +207,21 @@ class AppViewModel: ObservableObject {
         }
         
         process.waitUntilExit()
+        self.activeProcess = nil
         
         try? FileManager.default.removeItem(at: listURL)
         
         if process.terminationStatus != 0 {
             throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
         }
+    }
+    
+    func cancelProcessing() {
+        if let process = activeProcess, process.isRunning {
+            process.terminate()
+            self.activeProcess = nil
+        }
+        self.state = .idle
+        self.progressDescription = "Processing cancelled."
     }
 }
