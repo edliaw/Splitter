@@ -98,6 +98,10 @@ class AppViewModel: ObservableObject {
             self.alertMessage = "Please select an output directory."
             return
         }
+        
+        for var video in videos {
+            video.hasError = false
+        }
 
         state = .processing(0.0)
         progressDescription = "Calculating total duration..."
@@ -105,7 +109,7 @@ class AppViewModel: ObservableObject {
         Task.detached {
             do {
                 // 1. Calculate Total Duration
-                let totalDuration = try await self.calculateTotalDuration()
+                let totalDuration = try await self.ffprobeCompatAndDuration()
                 
                 // 2. Create Concat List File
                 let listURL = try await self.createConcatFile()
@@ -137,6 +141,58 @@ class AppViewModel: ObservableObject {
             }
         }
         return nil
+    }
+    
+    private func ffprobeCompatAndDuration() async throws -> Double {
+        var total: Double = 0
+        var referenceStreams: [FFprobeOutput.Stream]?
+        var success: Bool = true
+        
+        for (index, video) in videos.enumerated() {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: ffprobePath)
+            process.arguments = [
+                "-v", "error",
+                "-show_entries", "format=duration:stream=codec_type,codec_name,width,height,sample_rate",
+                "-of", "json",
+                video.url.path
+            ]
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            
+            try process.run()
+            process.waitUntilExit()
+            
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let decoder = JSONDecoder()
+            let output = try decoder.decode(FFprobeOutput.self, from: data)
+            
+            // 1. Add to total duration
+            if let durationStr = output.format?.duration, let duration = Double(durationStr) {
+                total += duration
+            } else {
+                throw NSError(domain: "FFprobeError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not determine duration for \(video.name)"])
+            }
+            
+            // 2. Check stream compatibility
+            guard let allStreams = output.streams else { continue }
+            
+            // We only care if video or audio streams mismatch (ignore subtitles/metadata)
+            let relevantStreams = allStreams.filter { $0.codec_type == "video" || $0.codec_type == "audio" }
+            
+            if referenceStreams == nil {
+                // Set the first video as the baseline
+                referenceStreams = relevantStreams
+            } else if referenceStreams != relevantStreams {
+                success = false
+                await MainActor.run { self.videos[index].hasError = true }
+            }
+        }
+        if !success {
+            // Any video doesn't match the baseline, -c copy will fail
+            throw NSError(domain: "CompatibilityError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Incompatible file(s): have a different codec, resolution, or audio format than the first video. Cannot use stream copy."])
+        }
+        return total
     }
     
     private func calculateTotalDuration() async throws -> Double {

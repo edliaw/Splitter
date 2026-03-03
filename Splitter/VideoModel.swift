@@ -11,7 +11,24 @@ import UniformTypeIdentifiers
 struct InputVideo: Identifiable, Hashable {
     let id = UUID()
     let url: URL
+    var hasError: Bool = false
     var name: String { url.lastPathComponent }
+}
+
+struct FFprobeOutput: Codable {
+    struct Stream: Codable, Equatable {
+        let codec_type: String?
+        let codec_name: String?
+        let width: Int?
+        let height: Int?
+        let sample_rate: String?
+    }
+    struct Format: Codable {
+        let duration: String?
+    }
+    
+    let streams: [Stream]?
+    let format: Format?
 }
 
 enum ProcessingState {

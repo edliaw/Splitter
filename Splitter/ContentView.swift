@@ -43,7 +43,9 @@ struct ContentView: View {
                             ForEach(viewModel.videos) { video in
                                 HStack {
                                     Image(systemName: "film")
+                                        .foregroundColor(video.hasError ? .red : .primary)
                                     Text(video.name)
+                                        .foregroundColor(video.hasError ? .red : .primary)
                                     Spacer()
                                     Button(action: {
                                         viewModel.deleteItem(video: video)
