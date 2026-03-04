@@ -44,7 +44,11 @@ actor VideoProcessor {
         
         try process.run()
         
-        let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
+        var data = Data()
+        for try await byte in pipe.fileHandleForReading.bytes {
+            data.append(byte)
+        }
+        process.waitUntilExit()
         return try JSONDecoder().decode(FFprobeOutput.self, from: data)
     }
 
