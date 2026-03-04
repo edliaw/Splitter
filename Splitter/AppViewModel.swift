@@ -27,7 +27,9 @@ class AppViewModel: ObservableObject {
     @Published var showingAlert = false
     @Published var alertTitle = ""
     @Published var alertMessage = ""
-    
+    @Published var showingOverwrite = false
+    @Published var overwriteAction: (() -> Void)?
+
     var ffmpegPath: URL?
     var ffprobePath: URL?
 
@@ -83,7 +85,7 @@ class AppViewModel: ObservableObject {
     }
     
     // MARK: - Process the video
-    func startProcessing(outputDirectory: URL?, filenamePrefix: String, startNumberStr: String, segmentSize: Double, splitEnabled: Bool) {
+    func startProcessing(outputDirectory: URL?, filenamePrefix: String, startNumberStr: String, segmentSize: Double, splitEnabled: Bool, forceOverwrite: Bool = false) {
         guard findFFmpeg() else {
             self.showingAlert = true
             self.alertTitle = "FFmpeg Not Found"
@@ -103,6 +105,29 @@ class AppViewModel: ObservableObject {
             self.alertTitle = "Output Directory Required"
             self.alertMessage = "Please select an output directory."
             return
+        }
+        
+        if !forceOverwrite {
+            let fileManager = FileManager.default
+            let checkFilename: String
+            
+            if splitEnabled {
+                checkFilename = "\(filenamePrefix)\(startNumberStr).mp4"
+            } else {
+                checkFilename = "\(filenamePrefix).mp4"
+            }
+            let checkURL = outputDir.appendingPathComponent(checkFilename)
+            
+            if fileManager.fileExists(atPath: checkURL.path) {
+                self.alertTitle = "Output File Already Exists"
+                self.alertMessage = "File '\(checkFilename)' already exists in the folder.  Do you want to overwrite it?"
+                self.showingOverwrite = true
+                self.overwriteAction = {
+                    // Call this function again, but bypass the check
+                    self.startProcessing(outputDirectory: outputDirectory, filenamePrefix: filenamePrefix, startNumberStr: startNumberStr, segmentSize: segmentSize, splitEnabled: splitEnabled, forceOverwrite: true)
+                }
+                return
+            }
         }
         
         self.videos = OrderedSet(self.videos.map { video in

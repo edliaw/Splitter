@@ -146,7 +146,7 @@ actor VideoProcessor {
         // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
         // To fix that, remove "-c copy" to force re-encoding (slower).
         var args = [
-            "-y",
+            "-y", // force overwrites files
             "-f", "concat",
             "-safe", "0",
             "-i", listURL.path,

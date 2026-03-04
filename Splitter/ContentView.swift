@@ -68,9 +68,17 @@ struct ContentView: View {
         }
         
         // MARK: - Alerts
-        .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert, presenting: viewModel) { viewModel in
+        .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert) {
             Button("OK", role: .cancel) { }
-        } message: { viewModel in
+        } message: {
+            Text(viewModel.alertMessage)
+        }
+        .alert(viewModel.alertTitle, isPresented: $viewModel.showingOverwrite) {
+            Button("Overwrite", role: .destructive) {
+                viewModel.overwriteAction?()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
             Text(viewModel.alertMessage)
         }
     }
