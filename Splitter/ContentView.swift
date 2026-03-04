@@ -13,9 +13,12 @@ struct ContentView: View {
     @StateObject private var viewModel = AppViewModel()
     @State private var isTargeted = false
     
-    @AppStorage("outputDirectory") private var outputDirectory: URL?
-    @AppStorage("filenamePrefix") private var filenamePrefix: String = ""
-    @AppStorage("segmentSize") private var segmentSize: Double = 10.0
+    @AppStorage("savedOutputDirectory") private var savedOutputDirectory: URL?
+    @AppStorage("savedFilenamePrefix") private var savedFilenamePrefix: String = ""
+    @AppStorage("savedSegmentSize") private var savedSegmentSize: Double = 10.0
+    @State private var outputDirectory: URL?
+    @State private var filenamePrefix: String = ""
+    @State private var segmentSize: Double = 10.0
     @State private var startNumberStr: String = "000"
     @State private var splitEnabled: Bool = true
 
@@ -53,6 +56,16 @@ struct ContentView: View {
             )
         }
         .frame(minWidth: 300, idealWidth: 400, minHeight: 550, idealHeight: 600)
+        .onAppear {
+            outputDirectory = savedOutputDirectory
+            filenamePrefix = savedFilenamePrefix
+            segmentSize = savedSegmentSize
+        }
+        .onDisappear {
+            savedOutputDirectory = outputDirectory
+            savedFilenamePrefix = filenamePrefix
+            savedSegmentSize = segmentSize
+        }
         
         // MARK: - Alerts
         .alert(viewModel.alertTitle, isPresented: $viewModel.showingAlert, presenting: viewModel) { viewModel in
