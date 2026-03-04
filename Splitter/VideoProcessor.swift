@@ -173,41 +173,25 @@ actor VideoProcessor {
         let pipe = Pipe()
         process.standardError = pipe // FFmpeg writes progress to stderr
         
-        let terminationStatus = try await withTaskCancellationHandler {
-            return try await withCheckedThrowingContinuation { continuation in
-                process.terminationHandler = { process in
-                    continuation.resume(returning: process.terminationStatus)
-                }
-                
-                do {
-                    try process.run()
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-                
-                Task {
-                    for try await line in pipe.fileHandleForReading.bytes.lines {
-                        guard line.contains("time=") else { continue }
-                        let components = line.components(separatedBy: "time=")
-                        guard components.count > 1 else { continue }
-                        let timePart = components[1].components(separatedBy: " ")[0]
-                        guard let currentSeconds = timeStringToSeconds(timePart) else { continue }
-                        let progress = min(currentSeconds / totalDuration, 1.0)
-                        // Safely report progress back to the caller
-                        await onProgress(progress)
-                    }
-                }
-            }
-        } onCancel: {
-            process.terminate()
+        try process.run()
+        for try await line in pipe.fileHandleForReading.bytes.lines {
+            guard line.contains("time=") else { continue }
+            let components = line.components(separatedBy: "time=")
+            guard components.count > 1 else { continue }
+            let timePart = components[1].components(separatedBy: " ")[0]
+            guard let currentSeconds = timeStringToSeconds(timePart) else { continue }
+            let progress = min(currentSeconds / totalDuration, 1.0)
+            // Safely report progress back to the caller
+            await onProgress(progress)
         }
+        process.waitUntilExit()
         
         self.activeProcess = nil
         
         try? FileManager.default.removeItem(at: listURL)
         
         try Task.checkCancellation()
-        if terminationStatus != 0 {
+        if process.terminationStatus != 0 {
             throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
         }
     }
