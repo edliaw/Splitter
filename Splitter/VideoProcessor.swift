@@ -132,12 +132,7 @@ actor VideoProcessor {
         self.activeProcess = process
         process.executableURL = config.ffmpegPath
         
-        var filename = config.filenamePrefix
-        if config.splitEnabled {
-            filename += "%03d.mp4"
-        } else {
-            filename += ".mp4"
-        }
+        let filename = buildFilename(filenamePrefix: config.filenamePrefix, splitEnabled: config.splitEnabled)
         
         let outputPattern = config.outputDirectory.appendingPathComponent(filename).path
         let segmentTime = config.segmentSize * 60

@@ -95,13 +95,7 @@ class AppViewModel: ObservableObject {
         
         if !forceOverwrite {
             let fileManager = FileManager.default
-            let checkFilename: String
-            
-            if splitEnabled {
-                checkFilename = "\(filenamePrefix)\(startNumberStr).mp4"
-            } else {
-                checkFilename = "\(filenamePrefix).mp4"
-            }
+            let checkFilename = buildFilename(filenamePrefix: filenamePrefix, splitEnabled: splitEnabled, startNumberStr: startNumberStr)
             let checkURL = outputDir.appendingPathComponent(checkFilename)
             
             if fileManager.fileExists(atPath: checkURL.path) {
