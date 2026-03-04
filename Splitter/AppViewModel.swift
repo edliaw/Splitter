@@ -129,8 +129,8 @@ class AppViewModel: ObservableObject {
         processingTask = Task {
             do {
                 // 1. Analyze videos with ffprobe
-                let outputs = try await self.processor.runFFprobe(config: config)
-                let totalDuration = try await self.processor.checkCompatAndTotalDuration(config: config, outputs: outputs)
+                let outputs = try await self.processor.batchRunFFprobe(config: config)
+                let totalDuration = try self.processor.checkCompatAndTotalDuration(config: config, outputs: outputs)
                 
                 // 2. Create Concat List File
                 let listURL = try await self.processor.createConcatFile(config: config)

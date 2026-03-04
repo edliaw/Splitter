@@ -29,41 +29,59 @@ actor VideoProcessor {
         activeProcess?.terminate()
         activeProcess = nil
     }
+    
+    nonisolated func runFFprobe(video: URL, ffprobePath: URL) async throws -> FFprobeOutput {
+        let process = Process()
+        process.executableURL = ffprobePath
+        process.arguments = [
+            "-v", "error",
+            "-show_entries", "format=duration:stream=codec_type,codec_name,width,height,sample_rate",
+            "-of", "json",
+            video.path
+        ]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        
+        try process.run()
+        
+        let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
+        return try JSONDecoder().decode(FFprobeOutput.self, from: data)
+    }
 
-    func runFFprobe(config: FFmpegConfig) async throws -> [FFprobeOutput] {
+    nonisolated func batchRunFFprobe(config: FFmpegConfig) async throws -> [FFprobeOutput] {
+        let maxConcurrentTasks = ProcessInfo.processInfo.activeProcessorCount
+        
         return try await withThrowingTaskGroup(of: (Int, FFprobeOutput).self) { group in
+            var results: [(Int, FFprobeOutput)] = []
+            var activeTasks = 0
+            
             for (index, video) in config.videos.enumerated() {
+                if activeTasks >= maxConcurrentTasks {
+                    if let result = try await group.next() {
+                        results.append(result)
+                    }
+                    activeTasks -= 1
+                }
+                
                 group.addTask {
                     try Task.checkCancellation()
-                    let process = Process()
-                    process.executableURL = config.ffprobePath
-                    process.arguments = [
-                        "-v", "error",
-                        "-show_entries", "format=duration:stream=codec_type,codec_name,width,height,sample_rate",
-                        "-of", "json",
-                        video.url.path
-                    ]
-                    let pipe = Pipe()
-                    process.standardOutput = pipe
-                    
-                    try process.run()
-                    let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
-                    process.waitUntilExit()
-                    
-                    let output = try JSONDecoder().decode(FFprobeOutput.self, from: data)
-                    
+                    let output = try await self.runFFprobe(video: video.id, ffprobePath: config.ffprobePath)
                     return (index, output)
                 }
+                activeTasks += 1
             }
-            var results: [(Int, FFprobeOutput)] = []
-            for try await result in group {
-                results.append(result)
+            while activeTasks > 0 {
+                if let result = try await group.next() {
+                    results.append(result)
+                }
+                activeTasks -= 1
             }
+            
             return results.sorted(by: { $0.0 < $1.0 }).map { $1 }
         }
     }
     
-    func checkCompatAndTotalDuration(config: FFmpegConfig, outputs: [FFprobeOutput]) throws -> Double {
+    nonisolated func checkCompatAndTotalDuration(config: FFmpegConfig, outputs: [FFprobeOutput]) throws -> Double {
         var total: Double = 0
         var referenceStreams: [FFprobeOutput.Stream]?
         var errors = Set<URL>()
@@ -93,7 +111,7 @@ actor VideoProcessor {
         return total
     }
     
-    func createConcatFile(config: FFmpegConfig) throws -> URL {
+    nonisolated func createConcatFile(config: FFmpegConfig) async throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let uuid = UUID().uuidString
         let fileURL = tempDir.appendingPathComponent("concat_\(uuid).txt")
@@ -128,6 +146,7 @@ actor VideoProcessor {
         // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
         // To fix that, remove "-c copy" to force re-encoding (slower).
         var args = [
+            "-y",
             "-f", "concat",
             "-safe", "0",
             "-i", listURL.path,
@@ -154,27 +173,41 @@ actor VideoProcessor {
         let pipe = Pipe()
         process.standardError = pipe // FFmpeg writes progress to stderr
         
-        try process.run()
-        for try await line in pipe.fileHandleForReading.bytes.lines {
-            if line.contains("time=") {
-                let components = line.components(separatedBy: "time=")
-                if components.count > 1 {
-                    let timePart = components[1].components(separatedBy: " ")[0]
-                    if let currentSeconds = timeStringToSeconds(timePart) {
+        let terminationStatus = try await withTaskCancellationHandler {
+            return try await withCheckedThrowingContinuation { continuation in
+                process.terminationHandler = { process in
+                    continuation.resume(returning: process.terminationStatus)
+                }
+                
+                do {
+                    try process.run()
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+                
+                Task {
+                    for try await line in pipe.fileHandleForReading.bytes.lines {
+                        guard line.contains("time=") else { continue }
+                        let components = line.components(separatedBy: "time=")
+                        guard components.count > 1 else { continue }
+                        let timePart = components[1].components(separatedBy: " ")[0]
+                        guard let currentSeconds = timeStringToSeconds(timePart) else { continue }
                         let progress = min(currentSeconds / totalDuration, 1.0)
-                        
                         // Safely report progress back to the caller
                         await onProgress(progress)
                     }
                 }
             }
+        } onCancel: {
+            process.terminate()
         }
         
         self.activeProcess = nil
         
         try? FileManager.default.removeItem(at: listURL)
         
-        if process.terminationStatus != 0 {
+        try Task.checkCancellation()
+        if terminationStatus != 0 {
             throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
         }
     }
