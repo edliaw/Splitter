@@ -23,6 +23,14 @@ struct InputVideo: Identifiable, Hashable, Sendable {
     let id: URL
     var hasError: Bool = false
     var name: String { id.lastPathComponent }
+    
+    static func == (lhs: InputVideo, rhs: InputVideo) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 struct FFprobeOutput: nonisolated Codable, Sendable {
