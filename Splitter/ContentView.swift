@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UniformTypeIdentifiers
+internal import OrderedCollections
 
 struct ContentView: View {
     @StateObject private var viewModel = AppViewModel()

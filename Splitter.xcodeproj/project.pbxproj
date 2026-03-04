@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		60C330082F5819E600D76F4A /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 60C330072F5819E600D76F4A /* Collections */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		600A64C52F2BBA6200294CEE /* Splitter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Splitter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				60C330082F5819E600D76F4A /* Collections in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = Splitter;
 			packageProductDependencies = (
+				60C330072F5819E600D76F4A /* Collections */,
 			);
 			productName = Splitter;
 			productReference = 600A64C52F2BBA6200294CEE /* Splitter.app */;
@@ -95,6 +101,7 @@
 			mainGroup = 600A64BC2F2BBA6200294CEE;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				60C330062F5819E600D76F4A /* XCRemoteSwiftPackageReference "swift-collections" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 600A64C62F2BBA6200294CEE /* Products */;
@@ -351,6 +358,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		60C330062F5819E600D76F4A /* XCRemoteSwiftPackageReference "swift-collections" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-collections.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		60C330072F5819E600D76F4A /* Collections */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 60C330062F5819E600D76F4A /* XCRemoteSwiftPackageReference "swift-collections" */;
+			productName = Collections;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 600A64BD2F2BBA6200294CEE /* Project object */;
 }

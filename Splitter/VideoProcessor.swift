@@ -6,6 +6,7 @@
 //
 
 import Foundation
+internal import OrderedCollections
 
 // Helper to convert HH:MM:SS.ms to seconds
 nonisolated func timeStringToSeconds(_ timeString: String) -> Double? {
@@ -65,7 +66,7 @@ actor VideoProcessor {
     func checkCompatAndTotalDuration(config: FFmpegConfig, outputs: [FFprobeOutput]) throws -> Double {
         var total: Double = 0
         var referenceStreams: [FFprobeOutput.Stream]?
-        var errors = Set<UUID>()
+        var errors = Set<URL>()
         
         for (index, output) in outputs.enumerated() {
             if let durationStr = output.format?.duration, let duration = Double(durationStr) {
@@ -100,7 +101,7 @@ actor VideoProcessor {
         var content = ""
         for video in config.videos {
             // FFmpeg concat file format requires escaped paths
-            let safePath = video.url.path.replacingOccurrences(of: "'", with: "'\\''")
+            let safePath = video.id.path.replacingOccurrences(of: "'", with: "'\\''")
             content += "file '\(safePath)'\n"
         }
         

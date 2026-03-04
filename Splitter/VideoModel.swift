@@ -20,10 +20,9 @@ struct FFmpegConfig: Sendable {
 }
 
 struct InputVideo: Identifiable, Hashable, Sendable {
-    let id = UUID()
-    let url: URL
+    let id: URL
     var hasError: Bool = false
-    var name: String { url.lastPathComponent }
+    var name: String { id.lastPathComponent }
 }
 
 struct FFprobeOutput: nonisolated Codable, Sendable {
@@ -43,9 +42,9 @@ struct FFprobeOutput: nonisolated Codable, Sendable {
 }
 
 struct VideoCompatibilityError: LocalizedError, Sendable {
-    let videoIds: Set<UUID>
+    let videoIds: Set<URL>
     var errorDescription: String? {
-        NSLocalizedString("Incompatible file(s): have a different codec, resolution, or audio format than the first video", comment: "Incompatible file")
+        NSLocalizedString("Video(s) have a different codec, resolution, or audio format than the first video", comment: "Incompatible video file")
     }
 }
 

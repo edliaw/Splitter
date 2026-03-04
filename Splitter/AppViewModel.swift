@@ -8,6 +8,16 @@
 import SwiftUI
 import Combine
 import UniformTypeIdentifiers
+internal import OrderedCollections
+
+extension OrderedSet {
+    mutating func move(fromOffsets indices: IndexSet, toOffset destination: Int) {
+        let elements: [Element] = indices.map { self.elements[$0] }
+        self.elements.remove(atOffsets: indices)
+        let correctedDestination = destination - indices.count(in: 0..<destination)
+        self.elements.insert(contentsOf: elements, at: correctedDestination)
+    }
+}
 
 @MainActor
 class AppViewModel: ObservableObject {
@@ -28,13 +38,12 @@ class AppViewModel: ObservableObject {
         }
     }
     @Published var startNumberStr: String = "000"
+    @Published var videos: OrderedSet<InputVideo> = OrderedSet()
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
     @Published var showingAlert = false
     @Published var alertTitle = ""
     @Published var alertMessage = ""
-    @Published var showMissingFFmpegAlert = false
-    @Published var splitEnabled = true
     
     var ffmpegPath: URL?
     var ffprobePath: URL?
@@ -45,10 +54,8 @@ class AppViewModel: ObservableObject {
     // MARK: - File Management
     func addFiles(urls: [URL]) {
         for url in urls {
-            if UTType(filenameExtension: url.pathExtension)?.conforms(to: .movie) ?? false {
-                if !videos.contains(where: { $0.url == url }) {
-                    videos.append(InputVideo(url: url))
-                }
+            if UTType(filenameExtension: url.pathExtension)?.conforms(to: .mpeg4Movie) ?? false {
+                videos.append(InputVideo(id: url))
             }
         }
     }
@@ -114,10 +121,12 @@ class AppViewModel: ObservableObject {
             return
         }
         
-        for index in videos.indices {
-            videos[index].hasError = false
-        }
-        
+        self.videos = OrderedSet(self.videos.map { video in
+            var updatedVideo = video
+            updatedVideo.hasError = false
+            return updatedVideo
+        })
+
         let config = FFmpegConfig(
             ffmpegPath: self.ffmpegPath!,
             ffprobePath: self.ffprobePath!,
@@ -126,7 +135,7 @@ class AppViewModel: ObservableObject {
             startNumberStr: self.startNumberStr,
             filenamePrefix: self.filenamePrefix,
             outputDirectory: outputDir,
-            videos: self.videos
+            videos: Array(self.videos)
         )
 
         state = .processing(0.0)
@@ -154,11 +163,13 @@ class AppViewModel: ObservableObject {
                 self.progressDescription = "Done!"
                 
             } catch let error as VideoCompatibilityError {
-                for index in self.videos.indices {
-                    if error.videoIds.contains(self.videos[index].id) {
-                        self.videos[index].hasError = true
+                self.videos = OrderedSet(self.videos.map { video in
+                    var updatedVideo = video
+                    if error.videoIds.contains(video.id) {
+                        updatedVideo.hasError = true
                     }
-                }
+                    return updatedVideo
+                })
                 self.state = .error(error.localizedDescription)
             } catch is CancellationError {
                 self.state = .idle
