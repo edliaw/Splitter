@@ -10,14 +10,43 @@
 		60C330082F5819E600D76F4A /* Collections in Frameworks */ = {isa = PBXBuildFile; productRef = 60C330072F5819E600D76F4A /* Collections */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		60C330742F58CE2B00D76F4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 600A64BD2F2BBA6200294CEE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 600A64C42F2BBA6200294CEE;
+			remoteInfo = Splitter;
+		};
+		60C330832F58CFE800D76F4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 600A64BD2F2BBA6200294CEE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 600A64C42F2BBA6200294CEE;
+			remoteInfo = Splitter;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		600A64C52F2BBA6200294CEE /* Splitter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Splitter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60C330702F58CE2B00D76F4A /* SplitterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SplitterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		60C3307D2F58CFE800D76F4A /* SplitterUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SplitterUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		600A64C72F2BBA6200294CEE /* Splitter */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Splitter;
+			sourceTree = "<group>";
+		};
+		60C330712F58CE2B00D76F4A /* SplitterTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SplitterTests;
+			sourceTree = "<group>";
+		};
+		60C3307E2F58CFE800D76F4A /* SplitterUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SplitterUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -31,6 +60,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		60C3306D2F58CE2B00D76F4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60C3307A2F58CFE800D76F4A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -38,6 +81,8 @@
 			isa = PBXGroup;
 			children = (
 				600A64C72F2BBA6200294CEE /* Splitter */,
+				60C330712F58CE2B00D76F4A /* SplitterTests */,
+				60C3307E2F58CFE800D76F4A /* SplitterUITests */,
 				600A64C62F2BBA6200294CEE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -46,6 +91,8 @@
 			isa = PBXGroup;
 			children = (
 				600A64C52F2BBA6200294CEE /* Splitter.app */,
+				60C330702F58CE2B00D76F4A /* SplitterTests.xctest */,
+				60C3307D2F58CFE800D76F4A /* SplitterUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -76,6 +123,52 @@
 			productReference = 600A64C52F2BBA6200294CEE /* Splitter.app */;
 			productType = "com.apple.product-type.application";
 		};
+		60C3306F2F58CE2B00D76F4A /* SplitterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60C330762F58CE2B00D76F4A /* Build configuration list for PBXNativeTarget "SplitterTests" */;
+			buildPhases = (
+				60C3306C2F58CE2B00D76F4A /* Sources */,
+				60C3306D2F58CE2B00D76F4A /* Frameworks */,
+				60C3306E2F58CE2B00D76F4A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				60C330752F58CE2B00D76F4A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				60C330712F58CE2B00D76F4A /* SplitterTests */,
+			);
+			name = SplitterTests;
+			packageProductDependencies = (
+			);
+			productName = SplitterTests;
+			productReference = 60C330702F58CE2B00D76F4A /* SplitterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		60C3307C2F58CFE800D76F4A /* SplitterUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60C330852F58CFE800D76F4A /* Build configuration list for PBXNativeTarget "SplitterUITests" */;
+			buildPhases = (
+				60C330792F58CFE800D76F4A /* Sources */,
+				60C3307A2F58CFE800D76F4A /* Frameworks */,
+				60C3307B2F58CFE800D76F4A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				60C330842F58CFE800D76F4A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				60C3307E2F58CFE800D76F4A /* SplitterUITests */,
+			);
+			name = SplitterUITests;
+			packageProductDependencies = (
+			);
+			productName = SplitterUITests;
+			productReference = 60C3307D2F58CFE800D76F4A /* SplitterUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -83,11 +176,19 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					600A64C42F2BBA6200294CEE = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					60C3306F2F58CE2B00D76F4A = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 600A64C42F2BBA6200294CEE;
+					};
+					60C3307C2F58CFE800D76F4A = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 600A64C42F2BBA6200294CEE;
 					};
 				};
 			};
@@ -109,12 +210,28 @@
 			projectRoot = "";
 			targets = (
 				600A64C42F2BBA6200294CEE /* Splitter */,
+				60C3306F2F58CE2B00D76F4A /* SplitterTests */,
+				60C3307C2F58CFE800D76F4A /* SplitterUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		600A64C32F2BBA6200294CEE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60C3306E2F58CE2B00D76F4A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60C3307B2F58CFE800D76F4A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -131,7 +248,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		60C3306C2F58CE2B00D76F4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60C330792F58CFE800D76F4A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		60C330752F58CE2B00D76F4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 600A64C42F2BBA6200294CEE /* Splitter */;
+			targetProxy = 60C330742F58CE2B00D76F4A /* PBXContainerItemProxy */;
+		};
+		60C330842F58CFE800D76F4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 600A64C42F2BBA6200294CEE /* Splitter */;
+			targetProxy = 60C330832F58CFE800D76F4A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		600A64CE2F2BBA6300294CEE /* Debug */ = {
@@ -336,6 +480,84 @@
 			};
 			name = Release;
 		};
+		60C330772F58CE2B00D76F4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XQ5YWHP2Y9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eliaw.SplitterTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Splitter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Splitter";
+			};
+			name = Debug;
+		};
+		60C330782F58CE2B00D76F4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XQ5YWHP2Y9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eliaw.SplitterTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Splitter.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Splitter";
+			};
+			name = Release;
+		};
+		60C330862F58CFE800D76F4A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XQ5YWHP2Y9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eliaw.SplitterUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Splitter;
+			};
+			name = Debug;
+		};
+		60C330872F58CFE800D76F4A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XQ5YWHP2Y9;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = eliaw.SplitterUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = Splitter;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -353,6 +575,24 @@
 			buildConfigurations = (
 				600A64D12F2BBA6300294CEE /* Debug */,
 				600A64D22F2BBA6300294CEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		60C330762F58CE2B00D76F4A /* Build configuration list for PBXNativeTarget "SplitterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60C330772F58CE2B00D76F4A /* Debug */,
+				60C330782F58CE2B00D76F4A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		60C330852F58CFE800D76F4A /* Build configuration list for PBXNativeTarget "SplitterUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60C330862F58CFE800D76F4A /* Debug */,
+				60C330872F58CFE800D76F4A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
