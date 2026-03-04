@@ -149,7 +149,7 @@ struct VideoListView: View {
             .padding(.horizontal)
         }
     }
-    
+
     private func selectFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
@@ -186,7 +186,7 @@ struct ControlsView: View {
                     }
                     Spacer()
                     Button(action: {
-                        if let selectedURL = viewModel.selectOutputDirectory() {
+                        if let selectedURL = selectOutputDirectory() {
                             outputDirectory = selectedURL
                         }
                     }) {
@@ -243,6 +243,18 @@ struct ControlsView: View {
         }
         .padding(.horizontal)
     }
+    
+    func selectOutputDirectory() -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK {
+            return panel.url
+        }
+        return nil
+    }
+
 }
 
 // MARK: - Status and Progress

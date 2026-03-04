@@ -53,17 +53,6 @@ class AppViewModel: ObservableObject {
             }
         }
     }
-
-    func selectOutputDirectory() -> URL? {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK {
-            return panel.url
-        }
-        return nil
-    }
     
     private func findFFmpeg() -> (ffmpegPath: URL, ffprobePath: URL)? {
         let paths = [
