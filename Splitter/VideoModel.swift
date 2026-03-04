@@ -8,22 +8,33 @@
 import Foundation
 import UniformTypeIdentifiers
 
-struct InputVideo: Identifiable, Hashable {
+struct FFmpegConfig: Sendable {
+    let ffmpegPath: URL
+    let ffprobePath: URL
+    let segmentSize: Double
+    let splitEnabled: Bool
+    let startNumberStr: String
+    let filenamePrefix: String
+    let outputDirectory: URL
+    let videos: [InputVideo]
+}
+
+struct InputVideo: Identifiable, Hashable, Sendable {
     let id = UUID()
     let url: URL
     var hasError: Bool = false
     var name: String { url.lastPathComponent }
 }
 
-struct FFprobeOutput: Codable {
-    struct Stream: Codable, Equatable {
+struct FFprobeOutput: nonisolated Codable, Sendable {
+    struct Stream: Codable, Equatable, Sendable {
         let codec_type: String?
         let codec_name: String?
         let width: Int?
         let height: Int?
         let sample_rate: String?
     }
-    struct Format: Codable {
+    struct Format: Codable, Sendable {
         let duration: String?
     }
     
@@ -31,21 +42,16 @@ struct FFprobeOutput: Codable {
     let format: Format?
 }
 
-enum ProcessingState {
+struct VideoCompatibilityError: LocalizedError, Sendable {
+    let videoIds: Set<UUID>
+    var errorDescription: String? {
+        NSLocalizedString("Incompatible file(s): have a different codec, resolution, or audio format than the first video", comment: "Incompatible file")
+    }
+}
+
+enum ProcessingState: Sendable {
     case idle
     case processing(Double) // 0.0 to 1.0
     case completed
     case error(String)
-}
-
-// Helper to convert HH:MM:SS.ms to seconds
-func timeStringToSeconds(_ timeString: String) -> Double? {
-    let components = timeString.components(separatedBy: ":")
-    guard components.count >= 3 else { return nil }
-    
-    let hours = Double(components[0]) ?? 0
-    let minutes = Double(components[1]) ?? 0
-    let seconds = Double(components[2]) ?? 0
-    
-    return (hours * 3600) + (minutes * 60) + seconds
 }

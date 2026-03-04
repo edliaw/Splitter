@@ -36,9 +36,11 @@ class AppViewModel: ObservableObject {
     @Published var showMissingFFmpegAlert = false
     @Published var splitEnabled = true
     
-    var ffmpegPath = ""
-    var ffprobePath = ""
-    private var activeProcess: Process? // tracks the running process
+    var ffmpegPath: URL?
+    var ffprobePath: URL?
+
+    private let processor = VideoProcessor()
+    private var processingTask: Task<Void, Never>?
     
     // MARK: - File Management
     func addFiles(urls: [URL]) {
@@ -73,12 +75,25 @@ class AppViewModel: ObservableObject {
         }
     }
     
-    // MARK: - FFmpeg Logic
+    private func findFFmpeg() -> Bool {
+        let paths = [
+            "/opt/homebrew/bin/ffmpeg",
+            "/usr/local/bin/ffmpeg",
+            "/usr/bin/ffmpeg"
+        ]
+        for path in paths {
+            if FileManager.default.fileExists(atPath: path) {
+                self.ffmpegPath = URL(fileURLWithPath: path)
+                self.ffprobePath = URL(fileURLWithPath: path.replacingOccurrences(of: "ffmpeg", with: "ffprobe"))
+                return true
+            }
+        }
+        return false
+    }
+    
+    // MARK: - Process the video
     func startProcessing() {
-        if let foundPath = findFFmpeg() {
-            self.ffmpegPath = foundPath
-            self.ffprobePath = foundPath.replacingOccurrences(of: "ffmpeg", with: "ffprobe")
-        } else {
+        if !findFFmpeg() {
             self.showingAlert = true
             self.alertTitle = "FFmpeg Not Found"
             self.alertMessage = "This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal."
@@ -99,225 +114,66 @@ class AppViewModel: ObservableObject {
             return
         }
         
-        for var video in videos {
-            video.hasError = false
+        for index in videos.indices {
+            videos[index].hasError = false
         }
+        
+        let config = FFmpegConfig(
+            ffmpegPath: self.ffmpegPath!,
+            ffprobePath: self.ffprobePath!,
+            segmentSize: self.segmentSize,
+            splitEnabled: self.splitEnabled,
+            startNumberStr: self.startNumberStr,
+            filenamePrefix: self.filenamePrefix,
+            outputDirectory: outputDir,
+            videos: self.videos
+        )
 
         state = .processing(0.0)
         progressDescription = "Calculating total duration..."
         
-        Task.detached {
+        // MARK: - Start task
+        processingTask = Task {
             do {
-                // 1. Calculate Total Duration
-                let totalDuration = try await self.ffprobeCompatAndDuration()
+                // 1. Analyze videos with ffprobe
+                let outputs = try await self.processor.runFFprobe(config: config)
+                let totalDuration = try await self.processor.checkCompatAndTotalDuration(config: config, outputs: outputs)
                 
                 // 2. Create Concat List File
-                let listURL = try await self.createConcatFile()
+                let listURL = try await self.processor.createConcatFile(config: config)
                 
                 // 3. Run FFmpeg
-                try await self.runFFmpeg(listURL: listURL, outputDir: outputDir, totalDuration: totalDuration)
-                
-                await MainActor.run {
-                    self.state = .completed
-                    self.progressDescription = "Done!"
-                }
-            } catch {
-                await MainActor.run {
-                    self.state = .error(error.localizedDescription)
-                }
-            }
-        }
-    }
-    
-    private func findFFmpeg() -> String? {
-        let paths = [
-            "/opt/homebrew/bin/ffmpeg",
-            "/usr/local/bin/ffmpeg",
-            "/usr/bin/ffmpeg"
-        ]
-        for path in paths {
-            if FileManager.default.fileExists(atPath: path) {
-                return path
-            }
-        }
-        return nil
-    }
-    
-    private func ffprobeCompatAndDuration() async throws -> Double {
-        var total: Double = 0
-        var referenceStreams: [FFprobeOutput.Stream]?
-        var success: Bool = true
-        
-        for (index, video) in videos.enumerated() {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: ffprobePath)
-            process.arguments = [
-                "-v", "error",
-                "-show_entries", "format=duration:stream=codec_type,codec_name,width,height,sample_rate",
-                "-of", "json",
-                video.url.path
-            ]
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let decoder = JSONDecoder()
-            let output = try decoder.decode(FFprobeOutput.self, from: data)
-            
-            // 1. Add to total duration
-            if let durationStr = output.format?.duration, let duration = Double(durationStr) {
-                total += duration
-            } else {
-                throw NSError(domain: "FFprobeError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not determine duration for \(video.name)"])
-            }
-            
-            // 2. Check stream compatibility
-            guard let allStreams = output.streams else { continue }
-            
-            // We only care if video or audio streams mismatch (ignore subtitles/metadata)
-            let relevantStreams = allStreams.filter { $0.codec_type == "video" || $0.codec_type == "audio" }
-            
-            if referenceStreams == nil {
-                // Set the first video as the baseline
-                referenceStreams = relevantStreams
-            } else if referenceStreams != relevantStreams {
-                success = false
-                await MainActor.run { self.videos[index].hasError = true }
-            }
-        }
-        if !success {
-            // Any video doesn't match the baseline, -c copy will fail
-            throw NSError(domain: "CompatibilityError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Incompatible file(s): have a different codec, resolution, or audio format than the first video. Cannot use stream copy."])
-        }
-        return total
-    }
-    
-    private func calculateTotalDuration() async throws -> Double {
-        var total: Double = 0
-        
-        for video in videos {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: ffprobePath)
-            process.arguments = ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", video.url.path]
-            
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            
-            try process.run()
-            process.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8), let duration = Double(output.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                total += duration
-            }
-        }
-        return total
-    }
-    
-    private func createConcatFile() throws -> URL {
-        let tempDir = FileManager.default.temporaryDirectory
-        let uuid = UUID().uuidString
-        let fileURL = tempDir.appendingPathComponent("concat_\(uuid).txt")
-        
-        var content = ""
-        for video in videos {
-            // FFmpeg concat file format requires escaped paths
-            let safePath = video.url.path.replacingOccurrences(of: "'", with: "'\\''")
-            content += "file '\(safePath)'\n"
-        }
-        
-        try content.write(to: fileURL, atomically: true, encoding: .utf8)
-        return fileURL
-    }
-    
-    private func runFFmpeg(listURL: URL, outputDir: URL, totalDuration: Double) async throws {
-        let process = Process()
-        self.activeProcess = process
-        process.executableURL = URL(fileURLWithPath: ffmpegPath)
-        
-        var filename = filenamePrefix
-        if self.splitEnabled {
-            filename += "%03d.mp4"
-        } else {
-            filename += ".mp4"
-        }
-        
-        let outputPattern = outputDir.appendingPathComponent(filename).path
-        let segmentTime = self.segmentSize * 60
-                
-        // Command: Concat inputs -> Split into 10 min (600s) segments
-        // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
-        // To fix that, remove "-c copy" to force re-encoding (slower).
-        var args = [
-            "-f", "concat",
-            "-safe", "0",
-            "-i", listURL.path,
-            "-c", "copy",
-            "-ignore_unknown",
-            "-map", "0"
-        ]
-        if self.splitEnabled {
-            args += [
-                "-f", "segment",
-                "-segment_time", "\(segmentTime)",
-                "-reset_timestamps", "1",
-            ]
-            if self.startNumberStr != "000" {
-                args += [
-                    "-segment_start_number", self.startNumberStr,
-                ]
-            }
-        }
-        args.append(outputPattern)
-        
-        process.arguments = args
-        
-        let pipe = Pipe()
-        process.standardError = pipe // FFmpeg writes progress to stderr
-        
-        process.terminationHandler = { _ in }
-        
-        try process.run()
-        
-        // Read progress line by line
-        let handle = pipe.fileHandleForReading
-        for try await line in handle.bytes.lines {
-            // Parse "time=00:01:23.45"
-            if line.contains("time=") {
-                let components = line.components(separatedBy: "time=")
-                if components.count > 1 {
-                    let timePart = components[1].components(separatedBy: " ")[0]
-                    if let currentSeconds = timeStringToSeconds(timePart) {
-                        let progress = min(currentSeconds / totalDuration, 1.0)
-                        
-                        await MainActor.run {
-                            self.state = .processing(progress)
-                            self.progressDescription = "Processing: \(Int(progress * 100))%"
-                        }
+                try await self.processor.runFFmpeg(config: config, listURL: listURL, totalDuration: totalDuration) { progress in
+                    await MainActor.run {
+                        self.state = .processing(progress)
+                        self.progressDescription = "Processing: \(Int(progress * 100))%"
                     }
                 }
+                
+                self.state = .completed
+                self.progressDescription = "Done!"
+                
+            } catch let error as VideoCompatibilityError {
+                for index in self.videos.indices {
+                    if error.videoIds.contains(self.videos[index].id) {
+                        self.videos[index].hasError = true
+                    }
+                }
+                self.state = .error(error.localizedDescription)
+            } catch is CancellationError {
+                self.state = .idle
+                self.progressDescription = "Processing cancelled."
+            } catch {
+                self.state = .error(error.localizedDescription)
             }
-        }
-        
-        process.waitUntilExit()
-        self.activeProcess = nil
-        
-        try? FileManager.default.removeItem(at: listURL)
-        
-        if process.terminationStatus != 0 {
-            throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
         }
     }
     
+    // MARK: - Cancel task
     func cancelProcessing() {
-        if let process = activeProcess, process.isRunning {
-            process.terminate()
-            self.activeProcess = nil
+        processingTask?.cancel()
+        Task {
+            await self.processor.cancel()
         }
-        self.state = .idle
-        self.progressDescription = "Processing cancelled."
     }
 }

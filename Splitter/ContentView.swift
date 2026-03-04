@@ -21,7 +21,7 @@ struct ContentView: View {
                 .fontWeight(.bold)
                 .padding(.top)
             
-            // Drag and Drop Area / List
+            // MARK: - Drag and Drop Area / List
             VStack {
                 VStack {
                     if viewModel.videos.isEmpty {
@@ -64,25 +64,7 @@ struct ContentView: View {
                         )
                     }
                 }
-                .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
-                    var urls: [URL] = []
-                    let group = DispatchGroup()
-                    
-                    for provider in providers {
-                        group.enter()
-                        _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                            if let url = url {
-                                urls.append(url)
-                            }
-                            group.leave()
-                        }
-                    }
-                    
-                    group.notify(queue: .main) {
-                        viewModel.addFiles(urls: urls)
-                    }
-                    return true
-                }
+                .onDrop(of: [.mpeg4Movie], delegate: VideoDropDelegate(viewModel: viewModel, isTargeted: $isTargeted))
                 .padding(.horizontal)
                 
                 HStack {
@@ -101,7 +83,7 @@ struct ContentView: View {
             
             Divider()
             
-            // Controls
+            // MARK: - Controls
             Grid {
                 GridRow {
                     Text("Folder:")
@@ -169,7 +151,7 @@ struct ContentView: View {
             }
             .padding(.horizontal)
 
-            // Status and Progress
+            // MARK: - Status and Progress
             VStack {
                 switch viewModel.state {
                 case .idle:
@@ -188,7 +170,7 @@ struct ContentView: View {
             }
             .padding(.horizontal)
             
-            // Action Button
+            // MARK: - Action Button
             HStack {
                 Spacer()
                 
@@ -240,7 +222,7 @@ struct ContentView: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.movie]
+        panel.allowedContentTypes = [.mpeg4Movie]
         
         if panel.runModal() == .OK {
             viewModel.addFiles(urls: panel.urls)
