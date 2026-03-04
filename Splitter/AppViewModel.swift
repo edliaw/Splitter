@@ -30,9 +30,6 @@ class AppViewModel: ObservableObject {
     @Published var showingOverwrite = false
     @Published var overwriteAction: (() -> Void)?
 
-    var ffmpegPath: URL?
-    var ffprobePath: URL?
-
     private let processor = VideoProcessor()
     private var processingTask: Task<Void, Never>?
     
@@ -68,7 +65,7 @@ class AppViewModel: ObservableObject {
         return nil
     }
     
-    private func findFFmpeg() -> Bool {
+    private func findFFmpeg() -> (ffmpegPath: URL, ffprobePath: URL)? {
         let paths = [
             "/opt/homebrew/bin/ffmpeg",
             "/usr/local/bin/ffmpeg",
@@ -76,17 +73,17 @@ class AppViewModel: ObservableObject {
         ]
         for path in paths {
             if FileManager.default.fileExists(atPath: path) {
-                self.ffmpegPath = URL(fileURLWithPath: path)
-                self.ffprobePath = URL(fileURLWithPath: path.replacingOccurrences(of: "ffmpeg", with: "ffprobe"))
-                return true
+                let ffmpegPath = URL(fileURLWithPath: path)
+                let ffprobePath = URL(fileURLWithPath: path.replacingOccurrences(of: "ffmpeg", with: "ffprobe"))
+                return (ffmpegPath, ffprobePath)
             }
         }
-        return false
+        return nil
     }
     
     // MARK: - Process the video
     func startProcessing(outputDirectory: URL?, filenamePrefix: String, startNumberStr: String, segmentSize: Double, splitEnabled: Bool, forceOverwrite: Bool = false) {
-        guard findFFmpeg() else {
+        guard let (ffmpegPath, ffprobePath) = findFFmpeg() else {
             self.showingAlert = true
             self.alertTitle = "FFmpeg Not Found"
             self.alertMessage = "This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal."
@@ -137,8 +134,8 @@ class AppViewModel: ObservableObject {
         })
 
         let config = FFmpegConfig(
-            ffmpegPath: self.ffmpegPath!,
-            ffprobePath: self.ffprobePath!,
+            ffmpegPath: ffmpegPath,
+            ffprobePath: ffprobePath,
             segmentSize: segmentSize,
             splitEnabled: splitEnabled,
             startNumberStr: startNumberStr,
