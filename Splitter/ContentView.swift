@@ -13,6 +13,12 @@ struct ContentView: View {
     @StateObject private var viewModel = AppViewModel()
     @State private var isTargeted = false
     
+    @AppStorage("outputDirectory") private var outputDirectory: URL?
+    @AppStorage("filenamePrefix") private var filenamePrefix: String = ""
+    @AppStorage("segmentSize") private var segmentSize: Double = 10.0
+    @State private var startNumberStr: String = "000"
+    @State private var splitEnabled: Bool = true
+
     var body: some View {
         VStack(spacing: 20) {
             
@@ -90,7 +96,7 @@ struct ContentView: View {
                     Text("Folder:")
                         .gridColumnAlignment(.trailing)
                     HStack {
-                        if let url = viewModel.outputDirectory {
+                        if let url = outputDirectory {
                             Text(url.path)
                                 .truncationMode(.middle)
                                 .foregroundColor(.secondary)
@@ -98,27 +104,31 @@ struct ContentView: View {
                             Text("None Selected").foregroundColor(.red)
                         }
                         Spacer()
-                        Button(action: viewModel.selectOutputDirectory) {
+                        Button(action: {
+                            if let selectedURL = viewModel.selectOutputDirectory() {
+                                outputDirectory = selectedURL
+                            }
+                        }) {
                             Label("Select", systemImage: "arrow.up.folder")
                         }
                     }
                     .gridColumnAlignment(.leading)
                 }
                 GridRow {
-                    Text("Prefix:")
+                    Text("Output:")
                     HStack {
-                        TextField("some_prefix", text: $viewModel.filenamePrefix)
+                        TextField("filename prefix", text: $filenamePrefix)
                             .multilineTextAlignment(.trailing)
-                        if viewModel.splitEnabled {
-                            TextField("start", text: $viewModel.startNumberStr)
+                        if splitEnabled {
+                            TextField("start", text: $startNumberStr)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 40)
-                                .onChange(of: viewModel.startNumberStr) { oldValue, newValue in
+                                .onChange(of: startNumberStr) { oldValue, newValue in
                                     let filtered = newValue.filter { $0.isNumber }
                                     if let number = UInt16(String(filtered)) {
-                                        viewModel.startNumberStr = String(format: "%03d", number)
+                                        startNumberStr = String(format: "%03d", number)
                                     } else {
-                                        viewModel.startNumberStr = "000"
+                                        startNumberStr = "000"
                                     }
                                 }
                         }
@@ -128,22 +138,22 @@ struct ContentView: View {
                 GridRow {
                     Text("Mode:")
                     HStack {
-                        if viewModel.splitEnabled {
+                        if splitEnabled {
                             Text("Split")
                         } else {
                             Text("Merge")
                         }
                         Spacer()
-                        Toggle("", isOn: $viewModel.splitEnabled)
+                        Toggle("", isOn: $splitEnabled)
                             .toggleStyle(.switch)
                             .multilineTextAlignment(.trailing)
                     }
                 }
-                if viewModel.splitEnabled {
+                if splitEnabled {
                     GridRow {
                         Text("Length:")
                         HStack {
-                            TextField("length", value: $viewModel.segmentSize, format: .number)
+                            TextField("length", value: $segmentSize, format: .number)
                                 .multilineTextAlignment(.trailing)
                             Text("minutes")
                         }
@@ -187,9 +197,15 @@ struct ContentView: View {
                     }
                 default:
                     Button(action: {
-                        viewModel.startProcessing()
+                        viewModel.startProcessing(
+                            outputDirectory: outputDirectory,
+                            filenamePrefix: filenamePrefix,
+                            startNumberStr: startNumberStr,
+                            segmentSize: segmentSize,
+                            splitEnabled: splitEnabled
+                        )
                     }) {
-                        if viewModel.splitEnabled {
+                        if splitEnabled {
                             Label("Merge & Split", systemImage: "play.rectangle")
                                 .padding(.horizontal, 2)
                                 .padding(.vertical, 2)

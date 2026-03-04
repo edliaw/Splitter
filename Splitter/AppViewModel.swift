@@ -21,23 +21,6 @@ extension OrderedSet {
 
 @MainActor
 class AppViewModel: ObservableObject {
-    @Published var videos: [InputVideo] = []
-    @AppStorage("outputDirectory") var outputDirectory: URL? {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-    @AppStorage("filenamePrefix") var filenamePrefix: String = "" {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-    @AppStorage("segmentSize") var segmentSize: Double = 5.0 {
-        willSet {
-            objectWillChange.send()
-        }
-    }
-    @Published var startNumberStr: String = "000"
     @Published var videos: OrderedSet<InputVideo> = OrderedSet()
     @Published var state: ProcessingState = .idle
     @Published var progressDescription: String = ""
@@ -72,14 +55,15 @@ class AppViewModel: ObservableObject {
         }
     }
 
-    func selectOutputDirectory() {
+    func selectOutputDirectory() -> URL? {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK {
-            self.outputDirectory = panel.url
+            return panel.url
         }
+        return nil
     }
     
     private func findFFmpeg() -> Bool {
@@ -99,8 +83,8 @@ class AppViewModel: ObservableObject {
     }
     
     // MARK: - Process the video
-    func startProcessing() {
-        if !findFFmpeg() {
+    func startProcessing(outputDirectory: URL?, filenamePrefix: String, startNumberStr: String, segmentSize: Double, splitEnabled: Bool) {
+        guard findFFmpeg() else {
             self.showingAlert = true
             self.alertTitle = "FFmpeg Not Found"
             self.alertMessage = "This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal."
@@ -130,10 +114,10 @@ class AppViewModel: ObservableObject {
         let config = FFmpegConfig(
             ffmpegPath: self.ffmpegPath!,
             ffprobePath: self.ffprobePath!,
-            segmentSize: self.segmentSize,
-            splitEnabled: self.splitEnabled,
-            startNumberStr: self.startNumberStr,
-            filenamePrefix: self.filenamePrefix,
+            segmentSize: segmentSize,
+            splitEnabled: splitEnabled,
+            startNumberStr: startNumberStr,
+            filenamePrefix: filenamePrefix,
             outputDirectory: outputDir,
             videos: Array(self.videos)
         )
