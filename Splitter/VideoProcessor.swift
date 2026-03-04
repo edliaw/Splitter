@@ -173,8 +173,15 @@ actor VideoProcessor {
         let pipe = Pipe()
         process.standardError = pipe // FFmpeg writes progress to stderr
         
+        var errorLog: [String] = []
+        let maxLogLines = 5
+        
         try process.run()
         for try await line in pipe.fileHandleForReading.bytes.lines {
+            errorLog.append(line)
+            if errorLog.count >  maxLogLines {
+                errorLog.removeFirst()
+            }
             guard line.contains("time=") else { continue }
             let components = line.components(separatedBy: "time=")
             guard components.count > 1 else { continue }
@@ -192,7 +199,9 @@ actor VideoProcessor {
         
         try Task.checkCancellation()
         if process.terminationStatus != 0 {
-            throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "FFmpeg failed"])
+            let logString = errorLog.joined(separator: "\n")
+            let errorMessage = "FFmpeg failed with \(process.terminationStatus)\nLog:\n\(logString)"
+            throw NSError(domain: "FFmpegError", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errorMessage])
         }
     }
 }
