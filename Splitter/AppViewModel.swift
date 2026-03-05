@@ -113,12 +113,12 @@ class AppViewModel: ObservableObject {
             videos: Array(self.videos)
         )
 
-        state = .processing(0.0)
-        progressDescription = "Calculating total duration..."
-        
         // MARK: - Start task
         processingTask = Task {
             do {
+                self.state = .processing(0.0)
+                self.progressDescription = "Calculating total duration..."
+                
                 // 1. Analyze videos with ffprobe
                 let outputs = try await self.processor.batchRunFFprobe(config: config)
                 let totalDuration = try self.processor.checkCompatAndTotalDuration(config: config, outputs: outputs)

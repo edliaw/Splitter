@@ -30,11 +30,7 @@ actor VideoProcessor {
         
         try process.run()
         
-        var data = Data()
-        for try await byte in pipe.fileHandleForReading.bytes {
-            data.append(byte)
-        }
-        process.waitUntilExit()
+        let data = try pipe.fileHandleForReading.readToEnd() ?? Data()
         return try JSONDecoder().decode(FFprobeOutput.self, from: data)
     }
 
@@ -52,9 +48,8 @@ actor VideoProcessor {
                     }
                     activeTasks -= 1
                 }
-                
+                try Task.checkCancellation()
                 group.addTask {
-                    try Task.checkCancellation()
                     let output = try await self.runFFprobe(video: video.id)
                     return (index, output)
                 }
