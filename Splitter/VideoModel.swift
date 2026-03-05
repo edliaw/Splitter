@@ -62,11 +62,3 @@ enum ProcessingState: Sendable {
     case completed
     case error(String)
 }
-
-nonisolated func buildFilename(filenamePrefix: String, splitEnabled: Bool, startNumberStr: String = "%03d") -> String {
-    if splitEnabled {
-        return "\(filenamePrefix)\(startNumberStr).mp4"
-    } else {
-        return "\(filenamePrefix).mp4"
-    }
-}

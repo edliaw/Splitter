@@ -10,15 +10,6 @@ import Combine
 import UniformTypeIdentifiers
 internal import OrderedCollections
 
-extension OrderedSet {
-    mutating func move(fromOffsets indices: IndexSet, toOffset destination: Int) {
-        let elements: [Element] = indices.map { self.elements[$0] }
-        self.elements.remove(atOffsets: indices)
-        let correctedDestination = destination - indices.count(in: 0..<destination)
-        self.elements.insert(contentsOf: elements, at: correctedDestination)
-    }
-}
-
 @MainActor
 class AppViewModel: ObservableObject {
     @Published var videos: OrderedSet<InputVideo> = OrderedSet()

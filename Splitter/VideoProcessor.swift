@@ -8,20 +8,6 @@
 import Foundation
 internal import OrderedCollections
 
-// Helper to convert HH:MM:SS.ms to seconds
-nonisolated func timeStringToSeconds(_ timeString: String) -> Double? {
-    let components = timeString.components(separatedBy: ":").compactMap { Double($0) }
-    var totalSeconds: Double = 0
-    var multiplier: Double = 1
-    
-    for value in components.reversed() {
-        totalSeconds += value * multiplier
-        multiplier *= 60
-    }
-    
-    return totalSeconds > 0 ? totalSeconds : nil
-}
-
 actor VideoProcessor {
     private var activeProcess: Process?
     
