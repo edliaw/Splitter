@@ -9,14 +9,12 @@ import Testing
 import Foundation
 @testable import Splitter
 
-func createMockConfig(videoCount: Int) -> FFmpegConfig {
+func createMockConfig(videoCount: Int) -> VideoProcessorConfig {
     var videos: [InputVideo] = []
     for i in 0..<videoCount {
         videos.append(InputVideo(id: URL(fileURLWithPath: "/tmp/video\(i).mp4")))
     }
-    return FFmpegConfig(
-        ffmpegPath: URL(fileURLWithPath: "/test/ffmpeg"),
-        ffprobePath: URL(fileURLWithPath: "/test/ffprobe"),
+    return VideoProcessorConfig(
         segmentSize: 10.0,
         splitEnabled: true,
         startNumberStr: "000",
@@ -134,6 +132,10 @@ struct SplitterTests {
             viewModel.moveItems(from: IndexSet(integer: 0), to: 3)
             
             #expect(viewModel.videos.map { $0.id } == [url2, url3, url1], "Videos should be reordered 2, 3, 1")
+        }
+        
+        @Test func isFFmpegInstalled_success() {
+            #expect(viewModel.isFFmpegInstalled())
         }
     }
 }

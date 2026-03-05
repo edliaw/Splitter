@@ -45,25 +45,22 @@ class AppViewModel: ObservableObject {
         }
     }
     
-    private func findFFmpeg() -> (ffmpegPath: URL, ffprobePath: URL)? {
-        let paths = [
-            "/opt/homebrew/bin/ffmpeg",
-            "/usr/local/bin/ffmpeg",
-            "/usr/bin/ffmpeg"
-        ]
-        for path in paths {
-            if FileManager.default.fileExists(atPath: path) {
-                let ffmpegPath = URL(fileURLWithPath: path)
-                let ffprobePath = URL(fileURLWithPath: path.replacingOccurrences(of: "ffmpeg", with: "ffprobe"))
-                return (ffmpegPath, ffprobePath)
-            }
+    nonisolated func isFFmpegInstalled() -> Bool {
+        let process = createEnvProcess()
+        process.arguments = ["ffmpeg", "-version"]
+        
+        do {
+            try process.run()
+            process.waitUntilExit()
+            return process.terminationStatus == 0
+        } catch {
+            return false
         }
-        return nil
     }
     
     // MARK: - Process the video
     func startProcessing(outputDirectory: URL?, filenamePrefix: String, startNumberStr: String, segmentSize: Double, splitEnabled: Bool, forceOverwrite: Bool = false) {
-        guard let (ffmpegPath, ffprobePath) = findFFmpeg() else {
+        guard isFFmpegInstalled() else {
             self.showingAlert = true
             self.alertTitle = "FFmpeg Not Found"
             self.alertMessage = "This app requires FFmpeg to function.\n\nPlease install it via Homebrew by running:\n'brew install ffmpeg'\nin your Terminal."
@@ -107,9 +104,7 @@ class AppViewModel: ObservableObject {
             return updatedVideo
         })
 
-        let config = FFmpegConfig(
-            ffmpegPath: ffmpegPath,
-            ffprobePath: ffprobePath,
+        let config = VideoProcessorConfig(
             segmentSize: segmentSize,
             splitEnabled: splitEnabled,
             startNumberStr: startNumberStr,

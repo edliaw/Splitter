@@ -16,10 +16,10 @@ actor VideoProcessor {
         activeProcess = nil
     }
     
-    nonisolated func runFFprobe(video: URL, ffprobePath: URL) async throws -> FFprobeOutput {
-        let process = Process()
-        process.executableURL = ffprobePath
+    nonisolated func runFFprobe(video: URL) async throws -> FFprobeOutput {
+        let process = createEnvProcess()
         process.arguments = [
+            "ffprobe",
             "-v", "error",
             "-show_entries", "format=duration:stream=codec_type,codec_name,width,height,sample_rate",
             "-of", "json",
@@ -38,7 +38,7 @@ actor VideoProcessor {
         return try JSONDecoder().decode(FFprobeOutput.self, from: data)
     }
 
-    nonisolated func batchRunFFprobe(config: FFmpegConfig) async throws -> [FFprobeOutput] {
+    nonisolated func batchRunFFprobe(config: VideoProcessorConfig) async throws -> [FFprobeOutput] {
         let maxConcurrentTasks = ProcessInfo.processInfo.activeProcessorCount
         
         return try await withThrowingTaskGroup(of: (Int, FFprobeOutput).self) { group in
@@ -55,7 +55,7 @@ actor VideoProcessor {
                 
                 group.addTask {
                     try Task.checkCancellation()
-                    let output = try await self.runFFprobe(video: video.id, ffprobePath: config.ffprobePath)
+                    let output = try await self.runFFprobe(video: video.id)
                     return (index, output)
                 }
                 activeTasks += 1
@@ -71,7 +71,7 @@ actor VideoProcessor {
         }
     }
     
-    nonisolated func checkCompatAndTotalDuration(config: FFmpegConfig, outputs: [FFprobeOutput]) throws -> Double {
+    nonisolated func checkCompatAndTotalDuration(config: VideoProcessorConfig, outputs: [FFprobeOutput]) throws -> Double {
         var total: Double = 0
         var referenceStreams: [FFprobeOutput.Stream]?
         var errors = Set<URL>()
@@ -101,7 +101,7 @@ actor VideoProcessor {
         return total
     }
     
-    nonisolated func createConcatFile(config: FFmpegConfig) async throws -> URL {
+    nonisolated func createConcatFile(config: VideoProcessorConfig) async throws -> URL {
         let tempDir = FileManager.default.temporaryDirectory
         let uuid = UUID().uuidString
         let fileURL = tempDir.appendingPathComponent("concat_\(uuid).txt")
@@ -117,10 +117,9 @@ actor VideoProcessor {
         return fileURL
     }
 
-    func runFFmpeg(config: FFmpegConfig, listURL: URL, totalDuration: Double, onProgress: @Sendable @escaping (Double) async -> Void) async throws {
-        let process = Process()
+    func runFFmpeg(config: VideoProcessorConfig, listURL: URL, totalDuration: Double, onProgress: @Sendable @escaping (Double) async -> Void) async throws {
+        let process = createEnvProcess()
         self.activeProcess = process
-        process.executableURL = config.ffmpegPath
         
         let filename = buildFilename(filenamePrefix: config.filenamePrefix, splitEnabled: config.splitEnabled)
         
@@ -131,6 +130,7 @@ actor VideoProcessor {
         // Note: We use -c copy for speed (no re-encoding). If input codecs differ, this may fail.
         // To fix that, remove "-c copy" to force re-encoding (slower).
         var args = [
+            "ffmpeg",
             "-y", // force overwrites files
             "-f", "concat",
             "-safe", "0",

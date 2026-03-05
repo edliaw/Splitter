@@ -8,9 +8,8 @@
 import Foundation
 import UniformTypeIdentifiers
 
-struct FFmpegConfig: Sendable {
-    let ffmpegPath: URL
-    let ffprobePath: URL
+// Configuration parameters for app
+nonisolated struct VideoProcessorConfig: Sendable {
     let segmentSize: Double
     let splitEnabled: Bool
     let startNumberStr: String
@@ -19,7 +18,8 @@ struct FFmpegConfig: Sendable {
     let videos: [InputVideo]
 }
 
-struct InputVideo: Identifiable, Hashable, Sendable {
+// Video model
+nonisolated struct InputVideo: Identifiable, Hashable, Sendable {
     let id: URL
     var hasError: Bool = false
     var name: String { id.lastPathComponent }
@@ -33,6 +33,7 @@ struct InputVideo: Identifiable, Hashable, Sendable {
     }
 }
 
+// FFprobe output JSON structure
 struct FFprobeOutput: nonisolated Codable, Sendable {
     struct Stream: Codable, Equatable, Sendable {
         let codec_type: String?
@@ -49,6 +50,7 @@ struct FFprobeOutput: nonisolated Codable, Sendable {
     let format: Format?
 }
 
+// Error for mismatched video properties
 struct VideoCompatibilityError: LocalizedError, Sendable {
     let videoIds: Set<URL>
     var errorDescription: String? {
@@ -56,6 +58,7 @@ struct VideoCompatibilityError: LocalizedError, Sendable {
     }
 }
 
+// Application's processing state
 enum ProcessingState: Sendable {
     case idle
     case processing(Double) // 0.0 to 1.0
